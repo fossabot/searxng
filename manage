@@ -3,11 +3,25 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # shellcheck disable=SC2031
 
-# shellcheck source=utils/lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/utils/lib_manage.sh"
+if [[ -z "${REPO_ROOT}" ]]; then
+    REPO_ROOT=$(dirname "${BASH_SOURCE[0]}")
+    while [ -h "${REPO_ROOT}" ] ; do
+        REPO_ROOT=$(readlink "${REPO_ROOT}")
+    done
+    REPO_ROOT=$(cd "${REPO_ROOT}" && pwd -P )
+fi
 
-# shellcheck source=utils/lib_static.sh
-source "$(dirname "${BASH_SOURCE[0]}")/utils/lib_static.sh"
+# shellcheck source=makefile.lib/utils.sh
+source "$(dirname "${BASH_SOURCE[0]}")/makefile.lib/utils.sh"
+
+# shellcheck source=makefile.lib/pyenv.sh
+source "$(dirname "${BASH_SOURCE[0]}")/makefile.lib/pyenv.sh"
+
+# shellcheck source=makefile.lib/docs.sh
+source "$(dirname "${BASH_SOURCE[0]}")/makefile.lib/docs.sh"
+
+# shellcheck source=makefile.lib/static.sh
+source "$(dirname "${BASH_SOURCE[0]}")/makefile.lib/static.sh"
 
 # config
 
@@ -159,19 +173,6 @@ data.useragents() {
 data.osm_keys_tags() {
     build_msg DATA "update searx/data/osm_keys_tags.json"
     pyenv.cmd python searx_extra/update/update_osm_keys_tags.py
-    dump_return $?
-}
-
-docs.prebuild() {
-    build_msg DOCS "build ${DOCS_BUILD}/includes"
-    (
-        set -e
-        [ "$VERBOSE" = "1" ] && set -x
-        mkdir -p "${DOCS_BUILD}/includes"
-        ./utils/searx.sh doc   | cat > "${DOCS_BUILD}/includes/searx.rst"
-        ./utils/filtron.sh doc | cat > "${DOCS_BUILD}/includes/filtron.rst"
-        ./utils/morty.sh doc   | cat > "${DOCS_BUILD}/includes/morty.rst"
-    )
     dump_return $?
 }
 
@@ -334,60 +335,6 @@ pygments.less() {
         return 1
     fi
     return 0
-}
-
-py.build() {
-    build_msg BUILD "python package ${PYDIST}"
-    pyenv.cmd python setup.py \
-              sdist -d "${PYDIST}" \
-              bdist_wheel --bdist-dir "${PYBUILD}" -d "${PYDIST}"
-}
-
-py.clean() {
-    build_msg CLEAN pyenv
-    (   set -e
-        pyenv.drop
-        [ "$VERBOSE" = "1" ] && set -x
-        rm -rf "${PYDIST}" "${PYBUILD}" "${PY_ENV}" ./.tox ./*.egg-info
-        find . -name '*.pyc' -exec rm -f {} +
-        find . -name '*.pyo' -exec rm -f {} +
-        find . -name __pycache__ -exec rm -rf {} +
-    )
-}
-
-pyenv.check() {
-    cat  <<EOF
-import yaml
-print('import yaml --> OK')
-EOF
-}
-
-pyenv.install() {
-
-    if ! pyenv.OK; then
-        py.clean > /dev/null
-    fi
-    if pyenv.install.OK > /dev/null; then
-        return 0
-    fi
-
-    (   set -e
-        pyenv
-        build_msg PYENV "[install] pip install -e 'searx${PY_SETUP_EXTRAS}'"
-        "${PY_ENV_BIN}/python" -m pip install -e ".${PY_SETUP_EXTRAS}"
-        buildenv
-    )
-    local exit_val=$?
-    if [ ! $exit_val -eq 0 ]; then
-        die 42 "error while pip install (${PY_ENV_BIN})"
-    fi
-}
-
-pyenv.uninstall() {
-    build_msg PYENV "[pyenv.uninstall] uninstall packages: ${PYOBJECTS}"
-    pyenv.cmd python setup.py develop --uninstall 2>&1 \
-        | prefix_stdout "${_Blue}PYENV     ${_creset}[pyenv.uninstall] "
-
 }
 
 pypi.upload() {

@@ -4,7 +4,7 @@
 .DEFAULT_GOAL=help
 export MTOOLS=./manage
 
-include utils/makefile.include
+include makefile.lib/makefile.include
 
 all: clean install
 
@@ -29,15 +29,15 @@ run:  install
 	sleep 2 ; \
 	xdg-open http://127.0.0.1:8888/ ; \
 	) &
-	SEARX_DEBUG=1 ./manage pyenv.cmd python ./searx/webapp.py
+	SEARX_DEBUG=1 $(MTOOLS) pyenv.cmd python ./searx/webapp.py
 
 PHONY += install uninstall
 install uninstall:
-	$(Q)./manage pyenv.$@
+	$(Q)$(MTOOLS) pyenv.$@
 
 PHONY += clean
 clean: py.clean docs.clean node.clean test.clean
-	$(Q)./manage build_msg CLEAN  "common files"
+	$(Q)$(MTOOLS) build_msg CLEAN  "common files"
 	$(Q)find . -name '*.orig' -exec rm -f {} +
 	$(Q)find . -name '*.rej' -exec rm -f {} +
 	$(Q)find . -name '*~' -exec rm -f {} +
@@ -48,10 +48,10 @@ lxc.clean:
 
 PHONY += search.checker search.checker.%
 search.checker: install
-	$(Q)./manage pyenv.cmd searx-checker -v
+	$(Q)$(MTOOLS) pyenv.cmd searx-checker -v
 
 search.checker.%: install
-	$(Q)./manage pyenv.cmd searx-checker -v "$(subst _, ,$(patsubst search.checker.%,%,$@))"
+	$(Q)$(MTOOLS) pyenv.cmd searx-checker -v "$(subst _, ,$(patsubst search.checker.%,%,$@))"
 
 PHONY += test ci.test test.shell
 ci.test: test.yamllint test.pep8 test.pylint test.unit test.robot
@@ -63,9 +63,7 @@ test.shell:
 		utils/brand.env \
 		$(MTOOLS) \
 		utils/lib.sh \
-		utils/lib_manage.sh \
 		utils/lib_install.sh \
-		utils/lib_static.sh \
 	        utils/filtron.sh \
 	        utils/searx.sh \
 	        utils/morty.sh \
@@ -75,7 +73,7 @@ test.shell:
 	$(Q)$(MTOOLS) build_msg TEST "$@ OK"
 
 
-# wrap ./manage script
+# wrap $(MTOOLS) script
 
 MANAGE += buildenv
 MANAGE += babel.compile
@@ -102,16 +100,16 @@ $(MANAGE):
 PHONY += docs docs-clean docs-live docker themes
 
 docs: docs.html
-	$(Q)./manage build_msg WARN $@ is deprecated use docs.html
+	$(Q)$(MTOOLS) build_msg WARN $@ is deprecated use docs.html
 
 docs-clean: docs.clean
-	$(Q)./manage build_msg WARN $@ is deprecated use docs.clean
+	$(Q)$(MTOOLS) build_msg WARN $@ is deprecated use docs.clean
 
 docs-live: docs.live
-	$(Q)./manage build_msg WARN $@ is deprecated use docs.live
+	$(Q)$(MTOOLS) build_msg WARN $@ is deprecated use docs.live
 
 docker:  docker.build
-	$(Q)./manage build_msg WARN $@ is deprecated use docker.build
+	$(Q)$(MTOOLS) build_msg WARN $@ is deprecated use docker.build
 
 themes: themes.all
-	$(Q)./manage build_msg WARN $@ is deprecated use themes.all
+	$(Q)$(MTOOLS) build_msg WARN $@ is deprecated use themes.all
