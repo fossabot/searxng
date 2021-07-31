@@ -4,7 +4,7 @@
 # shellcheck disable=SC2031
 
 # shellcheck source=utils/lib.sh
-source "$(dirname "${BASH_SOURCE[0]}")/utils/lib.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/utils/lib_manage.sh"
 
 # shellcheck source=utils/lib_static.sh
 source "$(dirname "${BASH_SOURCE[0]}")/utils/lib_static.sh"
