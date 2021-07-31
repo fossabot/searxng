@@ -84,7 +84,6 @@ MANAGE += gecko.driver
 MANAGE += node.env node.clean
 MANAGE += py.build py.clean
 MANAGE += pyenv pyenv.install pyenv.uninstall
-MANAGE += pypi.upload pypi.upload.test
 MANAGE += test.yamllint test.pylint test.pep8 test.unit test.coverage test.robot test.clean
 MANAGE += themes.all themes.oscar themes.simple pygments.less
 MANAGE += static.build.commit static.build.drop static.build.restore

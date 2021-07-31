@@ -87,8 +87,6 @@ pyenv.:
   uninstall : uninstall developer installation
   cmd ...   : run command ... in virtualenv
   OK        : test if virtualenv is OK
-pypi.upload:
-  Upload python packages to PyPi (to test use pypi.upload.test)
 test.:
   pylint    : lint PYLINT_FILES, searx/engines, searx & tests
   pep8      : pycodestyle (pep8) for all files except PYLINT_FILES
@@ -335,19 +333,6 @@ pygments.less() {
         return 1
     fi
     return 0
-}
-
-pypi.upload() {
-    py.clean
-    py.build
-    # https://github.com/pypa/twine
-    pyenv.cmd twine upload "${PYDIST}"/*
-}
-
-pypi.upload.test() {
-    py.clean
-    py.build
-    pyenv.cmd twine upload -r testpypi "${PYDIST}"/*
 }
 
 test.yamllint() {

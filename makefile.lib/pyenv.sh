@@ -14,12 +14,6 @@ PY_ENV_REQ="${PY_ENV_REQ:=${REPO_ROOT}/requirements*.txt}"
 # pyenv.install
 PYOBJECTS="${PYOBJECTS:=.}"
 
-# folder where the python distribution takes place
-PYDIST="${PYDIST:=dist}"
-
-# folder where the intermediate build files take place
-PYBUILD="${PYBUILD:=build/py${PY}}"
-
 # https://www.python.org/dev/peps/pep-0508/#extras
 #PY_SETUP_EXTRAS='[develop,test]'
 PY_SETUP_EXTRAS="${PY_SETUP_EXTRAS:=[develop,test]}"
@@ -150,13 +144,6 @@ pyenv.cmd() {
         [ "$VERBOSE" = "1" ] && set -x
         "$@"
     )
-}
-
-py.build() {
-    build_msg BUILD "python package ${PYDIST}"
-    pyenv.cmd python setup.py \
-              sdist -d "${PYDIST}" \
-              bdist_wheel --bdist-dir "${PYBUILD}" -d "${PYDIST}"
 }
 
 py.clean() {
