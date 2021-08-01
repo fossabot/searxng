@@ -4,9 +4,15 @@
 # Sphinx doc
 # ----------
 
+# config
+# SPHINXOPTS=
+
 GH_PAGES="build/gh-pages"
 DOCS_DIST="${DOCS_DIST:=dist/docs}"
 DOCS_BUILD="${DOCS_BUILD:=build/docs}"
+
+# needed by sphinx-docs
+export DOCS_BUILD
 
 docs.prebuild() {
     build_msg DOCS "build ${DOCS_BUILD}/includes"

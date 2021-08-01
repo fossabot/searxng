@@ -1,5 +1,6 @@
-# -*- coding: utf-8; mode: sh indent-tabs-mode: nil -*-
 # SPDX-License-Identifier: AGPL-3.0-or-later
+# -*- coding: utf-8; mode: sh indent-tabs-mode: nil -*-
+
 # shellcheck disable=SC2059,SC1117
 
 required_commands() {

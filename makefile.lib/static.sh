@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
+# -*- coding: utf-8; mode: sh indent-tabs-mode: nil -*-
 
 
 STATIC_BUILD_COMMIT="[build] /static"
@@ -12,15 +12,6 @@ STATIC_BUILT_PATHS=(
     searx/static/themes/simple/js
     searx/static/themes/simple/src/generated/pygments.less
 )
-
-static_help(){
-    cat <<EOF
-static.build.:  ${STATIC_BUILD_COMMIT}
-  commit    : build & commit /static folder
-  drop      : drop last commit if it was previously done by static.build.commit
-  restore   : git restore of the /static folder (after themes.all)
-EOF
-}
 
 is.static.build.commit() {
 

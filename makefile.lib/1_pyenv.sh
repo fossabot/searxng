@@ -12,51 +12,16 @@ PY_ENV_REQ="${PY_ENV_REQ:=${REPO_ROOT}/requirements*.txt}"
 
 # List of python packages (folders) or modules (files) installed by command:
 # pyenv.install
-PYOBJECTS="${PYOBJECTS:=.}"
-
+PYOBJECTS="searx"
 # https://www.python.org/dev/peps/pep-0508/#extras
-#PY_SETUP_EXTRAS='[develop,test]'
-PY_SETUP_EXTRAS="${PY_SETUP_EXTRAS:=[develop,test]}"
+PY_SETUP_EXTRAS='[test]'
 
-PIP_BOILERPLATE=( pip wheel setuptools )
 
-# shellcheck disable=SC2120
-pyenv() {
-
-    # usage:  pyenv [vtenv_opts ...]
-    #
-    #   vtenv_opts: see 'pip install --help'
-    #
-    # Builds virtualenv with 'requirements*.txt' (PY_ENV_REQ) installed.  The
-    # virtualenv will be reused by validating sha256sum of the requirement
-    # files.
-
-    required_commands \
-        sha256sum "${PYTHON}" \
-        || exit
-
-    local pip_req=()
-
-    if ! pyenv.OK > /dev/null; then
-        rm -f "${PY_ENV}/${PY_ENV_REQ}.sha256"
-        pyenv.drop > /dev/null
-        build_msg PYENV "[virtualenv] installing ${PY_ENV_REQ} into ${PY_ENV}"
-
-        "${PYTHON}" -m venv "$@" "${PY_ENV}"
-        "${PY_ENV_BIN}/python" -m pip install -U "${PIP_BOILERPLATE[@]}"
-
-        for i in ${PY_ENV_REQ}; do
-            pip_req=( "${pip_req[@]}" "-r" "$i" )
-        done
-
-        (
-            [ "$VERBOSE" = "1" ] && set -x
-            # shellcheck disable=SC2086
-            "${PY_ENV_BIN}/python" -m pip install "${pip_req[@]}" \
-                && sha256sum ${PY_ENV_REQ} > "${PY_ENV}/requirements.sha256"
-        )
-    fi
-    pyenv.OK
+pyenv.check() {
+    cat  <<EOF
+import yaml
+print('import yaml --> OK')
+EOF
 }
 
 _pyenv_OK=''
@@ -97,12 +62,45 @@ pyenv.OK() {
     return 0
 }
 
-pyenv.drop() {
+# shellcheck disable=SC2120
+pyenv() {
 
-    build_msg PYENV "[virtualenv] drop ${PY_ENV}"
-    rm -rf "${PY_ENV}"
-    _pyenv_OK=''
+    # usage:  pyenv [vtenv_opts ...]
+    #
+    #   vtenv_opts: see 'pip install --help'
+    #
+    # Builds virtualenv with 'requirements*.txt' (PY_ENV_REQ) installed.  The
+    # virtualenv will be reused by validating sha256sum of the requirement
+    # files.
 
+    required_commands \
+        sha256sum "${PYTHON}" \
+        || exit
+
+    local pip_req=()
+
+    if ! pyenv.OK > /dev/null; then
+        _pyenv_OK=''
+        rm -f "${PY_ENV}/${PY_ENV_REQ}.sha256"
+        build_msg PYENV "[virtualenv] drop ${PY_ENV}"
+        rm -rf "${PY_ENV}"
+        build_msg PYENV "[virtualenv] installing ${PY_ENV_REQ} into ${PY_ENV}"
+
+        "${PYTHON}" -m venv "$@" "${PY_ENV}"
+        "${PY_ENV_BIN}/python" -m pip install -U "pip wheel setuptools"
+
+        for i in ${PY_ENV_REQ}; do
+            pip_req=( "${pip_req[@]}" "-r" "$i" )
+        done
+
+        (
+            [ "$VERBOSE" = "1" ] && set -x
+            # shellcheck disable=SC2086
+            "${PY_ENV_BIN}/python" -m pip install "${pip_req[@]}" \
+                && sha256sum ${PY_ENV_REQ} > "${PY_ENV}/requirements.sha256"
+        )
+    fi
+    pyenv.OK
 }
 
 _pyenv_install_OK=''
@@ -110,19 +108,11 @@ pyenv.install.OK() {
 
     [ "$_pyenv_install_OK" == "OK" ] && return 0
 
-    local imp=""
     local err=""
 
-    if [ "." = "${PYOBJECTS}" ]; then
-        imp="import $(basename "$(pwd)")"
-    else
-        # shellcheck disable=SC2086
-        for i in ${PYOBJECTS}; do imp="$imp, $i"; done
-        imp="import ${imp#,*} "
-    fi
     (
         [ "$VERBOSE" = "1" ] && set -x
-        "${PY_ENV_BIN}/python" -c "import sys; sys.path.pop(0); $imp;" 2>/dev/null
+        "${PY_ENV_BIN}/python" -c "import sys; sys.path.pop(0); import ${PYOBJECTS};" 2>/dev/null
     )
 
     err=$?
@@ -134,35 +124,6 @@ pyenv.install.OK() {
     build_msg PYENV "[install] OK"
     _pyenv_install_OK="OK"
     return 0
-}
-
-pyenv.cmd() {
-    pyenv.install
-    (   set -e
-        # shellcheck source=/dev/null
-        source "${PY_ENV_BIN}/activate"
-        [ "$VERBOSE" = "1" ] && set -x
-        "$@"
-    )
-}
-
-py.clean() {
-    build_msg CLEAN pyenv
-    (   set -e
-        pyenv.drop
-        [ "$VERBOSE" = "1" ] && set -x
-        rm -rf "${PYDIST}" "${PYBUILD}" "${PY_ENV}" ./.tox ./*.egg-info
-        find . -name '*.pyc' -exec rm -f {} +
-        find . -name '*.pyo' -exec rm -f {} +
-        find . -name __pycache__ -exec rm -rf {} +
-    )
-}
-
-pyenv.check() {
-    cat  <<EOF
-import yaml
-print('import yaml --> OK')
-EOF
 }
 
 pyenv.install() {
@@ -184,6 +145,27 @@ pyenv.install() {
     if [ ! $exit_val -eq 0 ]; then
         die 42 "error while pip install (${PY_ENV_BIN})"
     fi
+}
+
+pyenv.cmd() {
+    pyenv.install
+    (   set -e
+        # shellcheck source=/dev/null
+        source "${PY_ENV_BIN}/activate"
+        [ "$VERBOSE" = "1" ] && set -x
+        "$@"
+    )
+}
+
+py.clean() {
+    build_msg CLEAN pyenv
+    (   set -e
+        [ "$VERBOSE" = "1" ] && set -x
+        rm -rf "${PY_ENV}"
+        find . -name '*.pyc' -exec rm -f {} +
+        find . -name '*.pyo' -exec rm -f {} +
+        find . -name __pycache__ -exec rm -rf {} +
+    )
 }
 
 pyenv.uninstall() {
