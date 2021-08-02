@@ -87,7 +87,7 @@ pyenv() {
         build_msg PYENV "[virtualenv] installing ${PY_ENV_REQ} into ${PY_ENV}"
 
         "${PYTHON}" -m venv "$@" "${PY_ENV}"
-        "${PY_ENV_BIN}/python" -m pip install -U "pip wheel setuptools"
+        "${PY_ENV_BIN}/python" -m pip install -U pip wheel setuptools
 
         for i in ${PY_ENV_REQ}; do
             pip_req=( "${pip_req[@]}" "-r" "$i" )
