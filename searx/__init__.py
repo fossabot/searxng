@@ -11,6 +11,7 @@ import logging
 import searx.unixthreadname
 import searx.settings_loader
 from searx.settings_defaults import settings_set_defaults
+from searx.monkeypatch import monkeypatch
 
 
 # Debug
@@ -108,3 +109,5 @@ if max_request_timeout is None:
     logger.info('max_request_timeout=%s', repr(max_request_timeout))
 else:
     logger.info('max_request_timeout=%i second(s)', max_request_timeout)
+
+monkeypatch(logger, settings)

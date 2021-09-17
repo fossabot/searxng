@@ -10,6 +10,10 @@ brand:
   wiki_url: https://github.com/searxng/searxng/wiki
   issue_url: https://github.com/searxng/searxng/issues
 
+# monkeypatch:
+#   $PYTHONPATH: /home/user/python
+#   searx.search.SearchWithPlugins: user.searx.CustomSearchClass
+
 search:
   # Filter results. 0: None, 1: Moderate, 2: Strict
   safe_search: 0

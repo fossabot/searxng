@@ -190,6 +190,7 @@ SCHEMA = {
         'networks': {
         },
     },
+    'monkeypatch': SettingsValue(dict, {}),
     'plugins': SettingsValue((None, list), None),
     'enabled_plugins': SettingsValue(list, []),
     'checker': {
