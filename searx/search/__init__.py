@@ -19,6 +19,7 @@ from searx.network import initialize as initialize_network
 from searx.metrics import initialize as initialize_metrics, counter_inc, histogram_observe_time
 from searx.search.processors import PROCESSORS, initialize as initialize_processors
 from searx.search.checker import initialize as initialize_checker
+from .memory_dump import initialize as initialize_memory_dump
 
 
 logger = logger.getChild('search')
@@ -30,6 +31,7 @@ def initialize(settings_engines=None, enable_checker=False):
     initialize_network(settings_engines, settings['outgoing'])
     initialize_metrics([engine['name'] for engine in settings_engines])
     initialize_processors(settings_engines)
+    initialize_memory_dump()
     if enable_checker:
         initialize_checker()
 

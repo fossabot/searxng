@@ -14,3 +14,4 @@ uvloop==0.14.0; python_version < '3.7'
 httpx-socks[asyncio]==0.4.1
 langdetect==1.0.9
 setproctitle==1.2.2
+guppy3==3.1.1
