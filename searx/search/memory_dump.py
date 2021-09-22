@@ -5,7 +5,6 @@
 import threading
 import os
 import io
-import gc
 import signal
 
 from guppy import hpy
@@ -25,13 +24,12 @@ def hpy_to_str(hpy_instance, title):
     for i in range(0, 10):
         print(f'-- byrcs[{i}] --', file=output)
         print(byrcs[i].byid, file=output)
+        print(byrcs[i].rp, file=output)
     return output.getvalue()
 
 
 def run():
-    print(hpy_to_str(hpy(), 'before GC'))
-    gc.collect()
-    print(hpy_to_str(hpy(), 'after GC'))
+    print(hpy_to_str(hpy(), 'Memory Dump'))
 
 
 def _signal_handler(_signum, _frame):
