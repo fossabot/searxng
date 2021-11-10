@@ -42,6 +42,7 @@
 
         {% if unresponsive_engines and results|length >= 1 %}
 	<div class="dialog-error" role="alert">
+    {{ icon('warning') }}
 	  <p><strong>{{ _('Error!') }}</strong> {{ _('Engines cannot retrieve results') }}:</p>
     {%- for engine_name, error_type in unresponsive_engines -%}
     <p>{{- engine_name }} (
