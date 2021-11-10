@@ -237,13 +237,58 @@
 
   label {
     cursor: pointer;
-    padding: 0.3rem 0.75rem 0.5rem 0.75rem;
-    margin: 0;
+    padding-bottom: 0.5rem;
+    margin: 0 0.25rem;
     display: block;
     text-transform: capitalize;
     font-size: 0.9em;
     border-bottom: 2px solid transparent;
     .disable-user-select;
+  }
+
+  label::before {
+    padding-right: 0.125rem;
+    font-size: 1.4rem;
+  }
+
+  label.checkbox-general {
+    .ion-search-outline;
+  }
+
+  label.checkbox-images {
+    .ion-image-outline;
+  }
+
+  label.checkbox-videos {
+    .ion-play-outline;
+  }
+
+  label.checkbox-news {
+    .ion-newspaper-outline;
+  }
+
+  label.checkbox-map {
+    .ion-location-outline;
+  }
+
+  label.checkbox-music {
+    .ion-musical-notes-outline;
+  }
+
+  label.checkbox-it {
+    .ion-layers-outline;
+  }
+
+  label.checkbox-science {
+    .ion-school-outline;
+  }
+
+  label.checkbox-files {
+    .ion-file-tray-full-outline;
+  }
+
+  label.checkbox-social-media {
+    .ion-people-outline;
   }
 
   input[type="checkbox"]:checked + label {
