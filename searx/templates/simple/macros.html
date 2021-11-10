@@ -1,12 +1,3 @@
-<!-- Draw glyphicon icon from bootstrap-theme -->
-{% macro icon(action, alt) -%}
-    <span title="{{ alt }}" class="ion-icon-big ion-{{ action }}"></span>
-{%- endmacro %}
-
-{% macro icon_small(action) -%}
-    <span class="ion-icon ion-{{ action }}"></span>
-{%- endmacro %}
-
 <!-- Draw favicon -->
 {% macro draw_favicon(favicon) -%}
     <img width="14" height="14" class="favicon" src="{{ url_for('static', filename='themes/simple/img/icons/' + favicon + '.png') }}" alt="{{ favicon }}" />
