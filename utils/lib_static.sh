@@ -11,6 +11,7 @@ STATIC_BUILT_PATHS=(
     searx/static/themes/simple/css
     searx/static/themes/simple/js
     searx/static/themes/simple/src/generated/pygments.less
+    searx/templates/simple/icons.html
 )
 
 static_help(){
