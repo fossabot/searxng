@@ -11,7 +11,7 @@ with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 with open('requirements.txt') as f:
-    requirements = [ l.strip() for l in f.readlines()]
+    requirements = [ l.strip() for l in f.readlines() if not l.startswith('-e')]
 
 with open('requirements-dev.txt') as f:
     dev_requirements = [ l.strip() for l in f.readlines()]
