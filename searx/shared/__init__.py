@@ -15,10 +15,10 @@ else:
     try:
         uwsgi.cache_update('dummy', b'dummy')
         if uwsgi.cache_get('dummy') != b'dummy':
-            raise Exception()
+            raise Exception('impossible to store and read a value')
     except:
         # uwsgi.ini configuration problem: disable all scheduling
-        logger.error(
+        logger.exception(
             'uwsgi.ini configuration error, add this line to your uwsgi.ini\n'
             'cache2 = name=searxcache,items=2000,blocks=2000,blocksize=4096,bitmap=1'
         )
