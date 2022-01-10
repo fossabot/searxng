@@ -170,6 +170,9 @@ SCHEMA = {
         'method': SettingsValue(('POST', 'GET'), 'POST'),
         'default_http_headers': SettingsValue(dict, {}),
     },
+    'redis': {
+        'url': SettingsValue((None, str), None),
+    },
     'ui': {
         'static_path': SettingsDirectoryValue(str, os.path.join(searx_dir, 'static')),
         'templates_path': SettingsDirectoryValue(str, os.path.join(searx_dir, 'templates')),
