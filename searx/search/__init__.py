@@ -19,6 +19,7 @@ from searx.network import initialize as initialize_network, check_network_config
 from searx.metrics import initialize as initialize_metrics, counter_inc, histogram_observe_time
 from searx.search.processors import PROCESSORS, initialize as initialize_processors
 from searx.search.checker import initialize as initialize_checker
+from searx.search.onion import initialize_tor_engines
 
 
 logger = logger.getChild('search')
@@ -28,6 +29,7 @@ def initialize(settings_engines=None, enable_checker=False, check_network=False,
     settings_engines = settings_engines or settings['engines']
     load_engines(settings_engines)
     initialize_network(settings_engines, settings['outgoing'])
+    initialize_tor_engines(settings_engines)
     if check_network:
         check_network_configuration()
     initialize_metrics([engine['name'] for engine in settings_engines], enable_metrics)

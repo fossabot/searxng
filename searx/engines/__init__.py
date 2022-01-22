@@ -127,15 +127,13 @@ def load_engine(engine_data: dict) -> Optional[Engine]:
 
     update_engine_attributes(engine, engine_data)
     set_language_attributes(engine)
-    update_attributes_for_tor(engine)
+    set_loggers(engine, engine_name)
 
-    if not is_engine_active(engine):
+    if engine.inactive is True:
         return None
 
     if is_missing_required_attributes(engine):
         return None
-
-    set_loggers(engine, engine_name)
 
     if not any(cat in settings['categories_as_tabs'] for cat in engine.categories):
         engine.categories.append(OTHER_CATEGORY)
@@ -230,12 +228,6 @@ def set_language_attributes(engine: Engine):
         )
 
 
-def update_attributes_for_tor(engine):
-    if settings['outgoing'].get('using_tor_proxy') and hasattr(engine, 'onion_url'):
-        engine.search_url = engine.onion_url + getattr(engine, 'search_path', '')
-        engine.timeout += settings['outgoing'].get('extra_proxy_timeout', 0)
-
-
 def is_missing_required_attributes(engine):
     """An attribute is required when its name doesn't start with ``_`` (underline).
     Required attributes must not be ``None``.
@@ -247,18 +239,6 @@ def is_missing_required_attributes(engine):
             logger.error('Missing engine config attribute: "{0}.{1}"'.format(engine.name, engine_attr))
             missing = True
     return missing
-
-
-def is_engine_active(engine: Engine):
-    # check if engine is inactive
-    if engine.inactive is True:
-        return False
-
-    # exclude onion engines if not using tor
-    if 'onions' in engine.categories and not settings['outgoing'].get('using_tor_proxy'):
-        return False
-
-    return True
 
 
 def register_engine(engine: Engine):
@@ -274,6 +254,15 @@ def register_engine(engine: Engine):
 
     for category_name in engine.categories:
         categories.setdefault(category_name, []).append(engine)
+
+
+def unregister_engine(engine: Engine):
+    del engines[engine.name]
+    del engine_shortcuts[engine.shortcut]
+    for category_name in engine.categories:
+        categories[category_name].remove(engine)
+        if len(categories[category_name]) == 0:
+            del categories[category_name]
 
 
 def load_engines(engine_list):
