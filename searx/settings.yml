@@ -253,7 +253,6 @@ engines:
   # Requires Tor
   - name: ahmia
     engine: ahmia
-    using_tor_proxy: false
     categories: onions
     enable_http: true
     shortcut: ah
@@ -1272,7 +1271,6 @@ engines:
   # Requires Tor
   - name: torch
     engine: xpath
-    using_tor_proxy: false
     paging: true
     search_url:
       http://xmh57jrknzkhv6y3ls3ubitzfqnkrwxhopf5aygthi7d6rplyvk3noyd.onion/cgi-bin/omega/omega?P={query}&DEFAULTOP=and
