@@ -51,6 +51,30 @@ window.searxng = (function (w, d) {
     }
   };
 
+  searxng.h = function (elementName, props, childrens) {
+    // similar to VueJS h function: https://vuejs.org/api/render-function.html#h
+    const e = document.createElement(elementName);
+    if (props != null) {
+      for (const [name, value] of Object.entries(props)) {
+        e.setAttribute(name, value);
+      }
+    }
+    if (childrens != null) {
+      if (typeof child === "string") {
+        e.appendChild(document.createTextNode(childrens))
+      } else {
+        for (const child of childrens) {
+          if (typeof child === "string") {
+            e.appendChild(document.createTextNode(child))
+          } else {
+            e.appendChild(child);
+          }
+        }
+      }
+    }
+    return e;
+  }
+
   searxng.ready = function (callback) {
     if (document.readyState != 'loading') {
       callback.call(w);
