@@ -129,11 +129,12 @@ window.searxng = (function (w, d) {
       id = "style_" + src.replace('.', '_'),
       s = d.getElementById(id);
     if (s === null) {
-      s = d.createElement('link');
-      s.setAttribute('id', id);
-      s.setAttribute('rel', 'stylesheet');
-      s.setAttribute('type', 'text/css');
-      s.setAttribute('href', path);
+      s = searxng.h('link', {
+        id: id,
+        rel: 'stylesheet',
+        type: 'text/css',
+        href: path,
+      });
       d.body.appendChild(s);
     }
   };
@@ -143,9 +144,10 @@ window.searxng = (function (w, d) {
       id = "script_" + src.replace('.', '_'),
       s = d.getElementById(id);
     if (s === null) {
-      s = d.createElement('script');
-      s.setAttribute('id', id);
-      s.setAttribute('src', path);
+      s = searxng.h('script', {
+        id: id,
+        src: path,
+      });
       s.onload = callback;
       s.onerror = function () {
         s.setAttribute('error', '1');

@@ -11,9 +11,8 @@
       let elements = d.querySelectorAll('[data-engine-name="' + engine_name + '"] .engine-description');
       for (const element of elements) {
         let descriptionElement = document.createTextNode(description[0] + " ");
-        let sourceElement = d.createElement('i');
         // \xa0 is a breaking space ( &nbsp; ): see https://en.wikipedia.org/wiki/Non-breaking_space
-        sourceElement.textContent = searxng.settings.translations.Source + ':\xa0' + description[1];
+        let sourceElement = searxng.h('i', null, searxng.settings.translations.Source + ':\xa0' + description[1]);
         element.appendChild(descriptionElement);
         element.appendChild(sourceElement);
       }

@@ -50,10 +50,9 @@
         if (imgElement) {
           const imgSrc = imgElement.getAttribute('data-src');
           if (imgSrc) {
-            const loader = d.createElement('div');
+            const loader = searxng.h('div', { class: 'loader' });
             const imgLoader = new Image();
 
-            loader.classList.add('loader');
             detailElement.appendChild(loader);
 
             imgLoader.onload = e => {
