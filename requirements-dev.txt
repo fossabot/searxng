@@ -21,3 +21,4 @@ aiounittest==1.4.2
 yamllint==1.27.1
 wlc==1.13
 coloredlogs==15.0.1
+redislite==6.2.805324
