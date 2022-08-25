@@ -638,6 +638,22 @@ def health():
     return Response('OK', mimetype='text/plain')
 
 
+def searxng_format_date(dt: datetime):  # pylint: disable=invalid-name
+    # TODO, check if timezone is calculated right  # pylint: disable=fixme
+    d = dt.date()
+    t = dt.time()
+    if d.month == 1 and d.day == 1 and t.hour == 0 and t.minute == 0 and t.second == 0:
+        return str(d.year)
+    if dt.replace(tzinfo=None) >= datetime.now() - timedelta(days=1):
+        timedifference = datetime.now() - dt.replace(tzinfo=None)
+        minutes = int((timedifference.seconds / 60) % 60)
+        hours = int(timedifference.seconds / 60 / 60)
+        if hours == 0:
+            return gettext('{minutes} minute(s) ago').format(minutes=minutes)
+        return gettext('{hours} hour(s), {minutes} minute(s) ago').format(hours=hours, minutes=minutes)
+    return format_date(dt)
+
+
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     """Search query in q and return results.
@@ -716,25 +732,13 @@ def search():
         if 'url' in result:
             result['pretty_url'] = prettify_url(result['url'])
 
-        # TODO, check if timezone is calculated right  # pylint: disable=fixme
         if result.get('publishedDate'):  # do not try to get a date from an empty string or a None type
             try:  # test if publishedDate >= 1900 (datetime module bug)
                 result['pubdate'] = result['publishedDate'].strftime('%Y-%m-%d %H:%M:%S%z')
             except ValueError:
                 result['publishedDate'] = None
             else:
-                if result['publishedDate'].replace(tzinfo=None) >= datetime.now() - timedelta(days=1):
-                    timedifference = datetime.now() - result['publishedDate'].replace(tzinfo=None)
-                    minutes = int((timedifference.seconds / 60) % 60)
-                    hours = int(timedifference.seconds / 60 / 60)
-                    if hours == 0:
-                        result['publishedDate'] = gettext('{minutes} minute(s) ago').format(minutes=minutes)
-                    else:
-                        result['publishedDate'] = gettext('{hours} hour(s), {minutes} minute(s) ago').format(
-                            hours=hours, minutes=minutes
-                        )
-                else:
-                    result['publishedDate'] = format_date(result['publishedDate'])
+                result['publishedDate'] = searxng_format_date(result['publishedDate'])
 
         # set result['open_group'] = True when the template changes from the previous result
         # set result['close_group'] = True when the template changes on the next result

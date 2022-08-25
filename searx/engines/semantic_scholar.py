@@ -15,6 +15,7 @@ about = {
     "results": 'JSON',
 }
 
+categories = ['science', 'scientific publications']
 paging = True
 search_url = 'https://www.semanticscholar.org/api/1/search'
 paper_url = 'https://www.semanticscholar.org/paper'
@@ -47,9 +48,6 @@ def response(resp):
     results = []
 
     for result in res['results']:
-        item = {}
-        metadata = []
-
         url = result.get('primaryPaperLink', {}).get('url')
         if not url and result.get('links'):
             url = result.get('links')[0]
@@ -60,22 +58,33 @@ def response(resp):
         if not url:
             url = paper_url + '/%s' % result['id']
 
-        item['url'] = url
+        # fields = result.get('fieldsOfStudy')
+        # venue = result.get('venue', {}).get('text')
+        # if venue:
+        #     metadata.append(venue)
+        # if metadata:
+        #     item['metadata'] = ', '.join(metadata)
 
-        item['title'] = result['title']['text']
-        item['content'] = result['paperAbstract']['text']
+        # publishedDate
+        if 'pubDate' in result:
+            publishedDate = datetime.strptime(result['pubDate'], "%Y-%m-%d")
+        else:
+            publishedDate = None
 
-        metadata = result.get('fieldsOfStudy') or []
-        venue = result.get('venue', {}).get('text')
-        if venue:
-            metadata.append(venue)
-        if metadata:
-            item['metadata'] = ', '.join(metadata)
+        # authors
+        authors = [author[0]['name'] for author in result.get('authors', [])]
 
-        pubDate = result.get('pubDate')
-        if pubDate:
-            item['publishedDate'] = datetime.strptime(pubDate, "%Y-%m-%d")
-
-        results.append(item)
+        results.append(
+            {
+                'template': 'paper.html',
+                'url': url,
+                'title': result['title']['text'],
+                'content': result['paperAbstract']['text'],
+                'journal': result.get('journal', {}).get('name'),
+                'doi': result.get('doiInfo', {}).get('doi'),
+                'authors': authors,
+                'publishedDate': publishedDate,
+            }
+        )
 
     return results
