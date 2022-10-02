@@ -5,6 +5,7 @@ import typing
 import types
 import functools
 import itertools
+import ssl
 from time import time
 from timeit import default_timer
 from urllib.parse import urlparse
@@ -102,6 +103,15 @@ def _download_and_check_if_image(image_url: str) -> bool:
         except httpx.TimeoutException:
             logger.error('Timeout for %s: %i', image_url, int(time() - a))
             retry -= 1
+        except ssl.SSLCertVerificationError:
+            logger.error('Certificate error for %s', image_url)
+            return False
+        except httpx.UnsupportedProtocol:
+            logger.error('Unsupported protocol for %s', image_url)
+            return False
+        except httpx.ConnectError:
+            logger.error('ConnectError for %s', image_url)
+            return False
         except httpx.HTTPError:
             logger.exception('Exception for %s', image_url)
             return False
