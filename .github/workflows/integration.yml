@@ -17,9 +17,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Install Ubuntu packages
-      run: |
-        sudo ./utils/searxng.sh install packages
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -31,6 +28,10 @@ jobs:
       with:
         path: ./local
         key: python-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt', 'setup.py') }}
+    - name: Install Ubuntu packages
+      if: steps.cache-python.outputs.cache-hit != 'true'
+      run: |
+        sudo ./utils/searxng.sh install packages
     - name: Install Python dependencies
       if: steps.cache-python.outputs.cache-hit != 'true'
       run: |
