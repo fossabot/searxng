@@ -9,10 +9,10 @@ on:
 jobs:
   python:
     name: Python ${{ matrix.python-version }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
         python-version:  ["3.7", "3.8", "3.9", "3.10"]
     steps:
     - name: Checkout
@@ -50,7 +50,7 @@ jobs:
 
   themes:
     name: Themes
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -66,7 +66,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ./local
-        key: python-ubuntu-20.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
+        key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
     - name: Install node dependencies
       run: make V=1 node.env
     - name: Build themes
@@ -74,7 +74,7 @@ jobs:
 
   documentation:
     name: Documentation
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -93,7 +93,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ./local
-        key: python-ubuntu-20.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
+        key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
     - name: Build documentation
       run: |
         make V=1 docs.clean docs.html
@@ -110,7 +110,7 @@ jobs:
 
   babel:
     name: Update translations branch
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: ${{ github.repository_owner == 'searxng' && github.ref == 'refs/heads/master' }}
     needs:
       - python
@@ -132,7 +132,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ./local
-        key: python-ubuntu-20.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
+        key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
     - name: weblate & git setup
       env:
         WEBLATE_CONFIG: ${{ secrets.WEBLATE_CONFIG }}
@@ -156,7 +156,7 @@ jobs:
       - documentation
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         if: env.DOCKERHUB_USERNAME != null
@@ -174,7 +174,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ./local
-          key: python-ubuntu-20.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
+          key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
       - name: Set up QEMU
         if: env.DOCKERHUB_USERNAME != null
         uses: docker/setup-qemu-action@v1
