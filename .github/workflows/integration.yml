@@ -71,8 +71,11 @@ jobs:
       id: cache-python
       uses: actions/cache@v3
       with:
-        path: ./local
-        key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
+        path: |
+          ./local
+          ./.nvm
+          ./node_modules
+        key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py','.nvmrc', 'package.json') }}
     - name: Install node dependencies
       run: make V=1 node.env
     - name: Build themes
@@ -98,8 +101,11 @@ jobs:
       id: cache-python
       uses: actions/cache@v3
       with:
-        path: ./local
-        key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
+        path: |
+          ./local
+          ./.nvm
+          ./node_modules
+        key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py','.nvmrc', 'package.json') }}
     - name: Build documentation
       run: |
         make V=1 docs.clean docs.html
@@ -137,8 +143,11 @@ jobs:
       id: cache-python
       uses: actions/cache@v3
       with:
-        path: ./local
-        key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
+        path: |
+          ./local
+          ./.nvm
+          ./node_modules
+        key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py','.nvmrc', 'package.json') }}
     - name: weblate & git setup
       env:
         WEBLATE_CONFIG: ${{ secrets.WEBLATE_CONFIG }}
@@ -179,8 +188,11 @@ jobs:
         id: cache-python
         uses: actions/cache@v3
         with:
-          path: ./local
-          key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py') }}
+          path: |
+            ./local
+            ./.nvm
+            ./node_modules
+          key: python-ubuntu-22.04-3.9-${{ hashFiles('requirements*.txt', 'setup.py','.nvmrc', 'package.json') }}
       - name: Set up QEMU
         if: env.DOCKERHUB_USERNAME != null
         uses: docker/setup-qemu-action@v1
