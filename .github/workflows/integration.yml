@@ -26,8 +26,11 @@ jobs:
       id: cache-python
       uses: actions/cache@v3
       with:
-        path: ./local
-        key: python-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt', 'setup.py') }}
+        path: |
+          ./local
+          ./.nvm
+          ./node_modules
+        key: python-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt', 'setup.py','.nvmrc', 'package.json') }}
     - name: Install Ubuntu packages
       if: steps.cache-python.outputs.cache-hit != 'true'
       run: |
