@@ -30,6 +30,7 @@ class SearchQuery:
         'query',
         'engineref_list',
         'lang',
+        'lang_origin',
         'locale',
         'safesearch',
         'pageno',
@@ -44,6 +45,7 @@ class SearchQuery:
         query: str,
         engineref_list: typing.List[EngineRef],
         lang: str = 'all',
+        lang_origin: str = 'query',
         safesearch: int = 0,
         pageno: int = 1,
         time_range: typing.Optional[str] = None,
@@ -54,6 +56,7 @@ class SearchQuery:
         self.query = query
         self.engineref_list = engineref_list
         self.lang = lang
+        self.lang_origin = lang_origin
         self.safesearch = safesearch
         self.pageno = pageno
         self.time_range = time_range
@@ -73,10 +76,11 @@ class SearchQuery:
         return list(set(map(lambda engineref: engineref.category, self.engineref_list)))
 
     def __repr__(self):
-        return "SearchQuery({!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r})".format(
+        return "SearchQuery({!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r}, {!r})".format(
             self.query,
             self.engineref_list,
             self.lang,
+            self.lang_origin,
             self.safesearch,
             self.pageno,
             self.time_range,
@@ -89,6 +93,7 @@ class SearchQuery:
             self.query == other.query
             and self.engineref_list == other.engineref_list
             and self.lang == other.lang
+            and self.lang_origin == other.lang_origin
             and self.safesearch == other.safesearch
             and self.pageno == other.pageno
             and self.time_range == other.time_range
@@ -102,6 +107,7 @@ class SearchQuery:
                 self.query,
                 tuple(self.engineref_list),
                 self.lang,
+                self.lang_origin,
                 self.safesearch,
                 self.pageno,
                 self.time_range,

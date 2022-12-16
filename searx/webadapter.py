@@ -49,24 +49,24 @@ def parse_pageno(form: Dict[str, str]) -> int:
     return int(pageno_param)
 
 
-def parse_lang(preferences: Preferences, form: Dict[str, str], raw_text_query: RawTextQuery) -> str:
+def parse_lang(preferences: Preferences, form: Dict[str, str], raw_text_query: RawTextQuery) -> Tuple[str, str]:
     if is_locked('language'):
-        return preferences.get_value('language')
+        return preferences.get_value('language'), 'settings'
     # get language
     # set specific language if set on request, query or preferences
     # TODO support search with multiple languages
     if len(raw_text_query.languages):
-        query_lang = raw_text_query.languages[-1]
+        query_lang, query_lang_origin = raw_text_query.languages[-1], 'query'
     elif 'language' in form:
-        query_lang = form.get('language')
+        query_lang, query_lang_origin = form.get('language'), 'form'
     else:
-        query_lang = preferences.get_value('language')
+        query_lang, query_lang_origin = preferences.get_value('language'), 'preferences'
 
     # check language
     if not VALID_LANGUAGE_CODE.match(query_lang):
         raise SearxParameterException('language', query_lang)
 
-    return query_lang
+    return query_lang, query_lang_origin
 
 
 def parse_safesearch(preferences: Preferences, form: Dict[str, str]) -> int:
@@ -229,7 +229,7 @@ def get_search_query_from_webapp(
     # set query
     query = raw_text_query.getQuery()
     query_pageno = parse_pageno(form)
-    query_lang = parse_lang(preferences, form, raw_text_query)
+    query_lang, query_lang_origin = parse_lang(preferences, form, raw_text_query)
     query_safesearch = parse_safesearch(preferences, form)
     query_time_range = parse_time_range(form)
     query_timeout = parse_timeout(form, raw_text_query)
@@ -255,6 +255,7 @@ def get_search_query_from_webapp(
             query,
             query_engineref_list,
             query_lang,
+            query_lang_origin,
             query_safesearch,
             query_pageno,
             query_time_range,

@@ -97,6 +97,9 @@ def get_model():
 
 
 def pre_search(request, search):  # pylint: disable=unused-argument
+    if search.search_query.lang_origin == 'query':
+        return True
+
     prediction = get_model().predict(search.search_query.query, k=1, threshold=0.3)
     if prediction:
         lang = prediction[0][0].split('__label__')[1]
