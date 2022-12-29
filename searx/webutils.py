@@ -81,7 +81,8 @@ def get_static_files(static_path: str) -> Dict[str, str]:
                 # ignore hidden file
                 continue
             if file.is_file():
-                static_files[str(file.relative_to(static_path_path))] = get_hash_for_file(file)
+                posix_relative_path = file.relative_to(static_path_path).as_posix()
+                static_files[posix_relative_path] = get_hash_for_file(file)
             if file.is_dir() and file.name not in ('node_modules', 'src'):
                 # ignore "src" and "node_modules" directories
                 walk(file)
@@ -90,14 +91,16 @@ def get_static_files(static_path: str) -> Dict[str, str]:
     return static_files
 
 
-def get_result_templates(templates_path):
+def get_result_templates(templates_directory: str):
     result_templates = set()
-    templates_path_length = len(templates_path) + 1
-    for directory, _, files in os.walk(templates_path):
-        if directory.endswith('result_templates'):
-            for filename in files:
-                f = os.path.join(directory[templates_path_length:], filename)
-                result_templates.add(f)
+    templates_path = pathlib.Path(templates_directory)
+    for a_template_path in templates_path.iterdir():
+        result_templates_path = a_template_path / 'result_templates'
+        if not a_template_path.is_dir() or not result_templates_path.is_dir():
+            continue
+        for file in result_templates_path.iterdir():
+            posix_relative_path = file.relative_to(templates_path).as_posix()
+            result_templates.add(posix_relative_path)
     return result_templates
 
 
