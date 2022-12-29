@@ -19,8 +19,6 @@ A redis DB connect can be tested by::
 
 """
 
-import os
-import pwd
 import logging
 import redis
 from searx import get_setting
@@ -60,8 +58,7 @@ def initialize():
         return True
     except redis.exceptions.RedisError as e:
         _CLIENT = None
-        _pw = pwd.getpwuid(os.getuid())
-        logger.exception("[%s (%s)] can't connect redis DB ...", _pw.pw_name, _pw.pw_uid)
+        logger.exception("can't connect redis DB ...")
         if redis_url == OLD_REDIS_URL_DEFAULT_URL and isinstance(e, redis.exceptions.ConnectionError):
             logger.info(
                 "You can safely ignore the above Redis error if you don't use Redis. "
