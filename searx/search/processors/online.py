@@ -129,10 +129,16 @@ class OnlineProcessor(EngineProcessor):
 
         return response
 
+    def request(self, query, params):
+        self.engine.request(query, params)
+
+    def response(self, resp):
+        return self.engine.response(resp)
+
     def _search_basic(self, query, params):
         # update request parameters dependent on
         # search-engine (contained in engines folder)
-        self.engine.request(query, params)
+        self.request(query, params)
 
         # ignoring empty urls
         if params['url'] is None:
@@ -142,11 +148,11 @@ class OnlineProcessor(EngineProcessor):
             return None
 
         # send request
-        response = self._send_http_request(params)
+        resp = self._send_http_request(params)
 
         # parse the response
-        response.search_params = params
-        return self.engine.response(response)
+        resp.search_params = params
+        return self.response(resp)
 
     def search(self, query, params, result_container, start_time, timeout_limit):
         # set timeout for all HTTP requests
