@@ -167,7 +167,7 @@ class EngineProcessor(ABC):
         return params
 
     @abstractmethod
-    def search(self, query, params, result_container, start_time, timeout_limit):
+    def search_wrapper(self, query, params, result_container, start_time, timeout_limit):
         pass
 
     def get_tests(self):

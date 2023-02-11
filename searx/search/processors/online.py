@@ -135,7 +135,7 @@ class OnlineProcessor(EngineProcessor):
     def response(self, resp):
         return self.engine.response(resp)
 
-    def _search_basic(self, query, params):
+    def search(self, query, params):
         # update request parameters dependent on
         # search-engine (contained in engines folder)
         self.request(query, params)
@@ -154,7 +154,7 @@ class OnlineProcessor(EngineProcessor):
         resp.search_params = params
         return self.response(resp)
 
-    def search(self, query, params, result_container, start_time, timeout_limit):
+    def search_wrapper(self, query, params, result_container, start_time, timeout_limit):
         # set timeout for all HTTP requests
         searx.network.set_timeout_for_thread(timeout_limit, start_time=start_time)
         # reset the HTTP total time
@@ -164,7 +164,7 @@ class OnlineProcessor(EngineProcessor):
 
         try:
             # send requests and parse the results
-            search_results = self._search_basic(query, params)
+            search_results = self.search(query, params)
             self.extend_container(result_container, start_time, search_results)
         except ssl.SSLError as e:
             # requests timeout (connect or read)

@@ -180,7 +180,7 @@ class Search:
 
         for engine_name, query, request_params in requests:
             th = threading.Thread(  # pylint: disable=invalid-name
-                target=PROCESSORS[engine_name].search,
+                target=PROCESSORS[engine_name].search_wrapper,
                 args=(query, request_params, self.result_container, self.start_time, self.actual_timeout),
                 name=search_id,
             )

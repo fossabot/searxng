@@ -13,10 +13,10 @@ class OfflineProcessor(EngineProcessor):
 
     engine_type = 'offline'
 
-    def _search_basic(self, query, params):
+    def search(self, query, params):
         return self.engine.search(query, params)
 
-    def search(self, query, params, result_container, start_time, timeout_limit):
+    def search_wrapper(self, query, params, result_container, start_time, timeout_limit):
         try:
             search_results = self._search_basic(query, params)
             self.extend_container(result_container, start_time, search_results)
