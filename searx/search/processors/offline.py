@@ -18,7 +18,7 @@ class OfflineProcessor(EngineProcessor):
 
     def search_wrapper(self, query, params, result_container, start_time, timeout_limit):
         try:
-            search_results = self._search_basic(query, params)
+            search_results = self.search(query, params)
             self.extend_container(result_container, start_time, search_results)
         except ValueError as e:
             # do not record the error
