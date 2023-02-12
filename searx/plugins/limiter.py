@@ -23,7 +23,7 @@ Enable the plugin in ``settings.yml``:
 
 import ipaddress
 import re
-from typing import cast
+from typing import List, cast
 from flask import request
 
 from searx import get_setting, redisdb
@@ -126,7 +126,7 @@ def pre_request():
     return None
 
 
-def init_whitelist(limiter_whitelist_ip: list[str], limiter_whitelist_subnet: list[str]):
+def init_whitelist(limiter_whitelist_ip: List[str], limiter_whitelist_subnet: List[str]):
     global WHITELISTED_IPS, WHITELISTED_SUBNET  # pylint: disable=global-statement
     if isinstance(limiter_whitelist_ip, str):
         limiter_whitelist_ip = [limiter_whitelist_ip]
