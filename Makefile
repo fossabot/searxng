@@ -4,7 +4,7 @@
 .DEFAULT_GOAL=help
 export MTOOLS=./manage
 
-include utils/makefile.include
+include utils_manage/makefile.include
 
 all: clean install
 
@@ -13,7 +13,6 @@ PHONY += help
 help:
 	@./manage --help
 	@echo '----'
-	@echo 'run            - run developer instance'
 	@echo 'install        - developer install of SearxNG into virtualenv'
 	@echo 'uninstall      - uninstall developer installation'
 	@echo 'clean          - clean up working tree'
@@ -22,10 +21,6 @@ help:
 	@echo 'test.shell     - test shell scripts'
 	@echo 'ci.test        - run CI tests'
 
-
-PHONY += run
-run:  install
-	$(Q)./manage webapp.run
 
 PHONY += install uninstall
 install uninstall:
@@ -39,15 +34,12 @@ clean: py.clean docs.clean node.clean nvm.clean test.clean
 	$(Q)find . -name '*~' -exec rm -f {} +
 	$(Q)find . -name '*.bak' -exec rm -f {} +
 
-lxc.clean:
-	$(Q)rm -rf lxc-env
-
 PHONY += search.checker search.checker.%
 search.checker: install
-	$(Q)./manage pyenv.cmd searx-checker -v
+	$(Q)./manage pyenv.cmd searxng-checker -v
 
 search.checker.%: install
-	$(Q)./manage pyenv.cmd searx-checker -v "$(subst _, ,$(patsubst search.checker.%,%,$@))"
+	$(Q)./manage pyenv.cmd searxng-checker -v "$(subst _, ,$(patsubst search.checker.%,%,$@))"
 
 PHONY += test ci.test test.shell
 ci.test: test.yamllint test.black test.pyright test.pylint test.unit test.robot test.rst test.pybabel
@@ -56,25 +48,13 @@ test.shell:
 	$(Q)shellcheck -x -s dash \
 		dockerfiles/docker-entrypoint.sh
 	$(Q)shellcheck -x -s bash \
-		utils/brand.env \
-		$(MTOOLS) \
-		utils/lib.sh \
-		utils/lib_nvm.sh \
-		utils/lib_static.sh \
-		utils/lib_go.sh \
-		utils/lib_redis.sh \
-		utils/filtron.sh \
-		utils/searx.sh \
-		utils/searxng.sh \
-		utils/morty.sh \
-		utils/lxc.sh \
-		utils/lxc-searxng.env
+		$(MTOOLS)
 	$(Q)$(MTOOLS) build_msg TEST "$@ OK"
 
 
 # wrap ./manage script
 
-MANAGE += buildenv
+MANAGE += run
 MANAGE += weblate.translations.commit weblate.push.translations
 MANAGE += data.all data.languages data.useragents data.osm_keys_tags
 MANAGE += docs.html docs.live docs.gh-pages docs.prebuild docs.clean
