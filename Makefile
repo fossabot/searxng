@@ -13,7 +13,6 @@ PHONY += help
 help:
 	@./manage --help
 	@echo '----'
-	@echo 'run            - run developer instance'
 	@echo 'install        - developer install of SearxNG into virtualenv'
 	@echo 'uninstall      - uninstall developer installation'
 	@echo 'clean          - clean up working tree'
@@ -22,10 +21,6 @@ help:
 	@echo 'test.shell     - test shell scripts'
 	@echo 'ci.test        - run CI tests'
 
-
-PHONY += run
-run:  install
-	$(Q)./manage webapp.run
 
 PHONY += install uninstall
 install uninstall:
@@ -38,9 +33,6 @@ clean: py.clean docs.clean node.clean nvm.clean test.clean
 	$(Q)find . -name '*.rej' -exec rm -f {} +
 	$(Q)find . -name '*~' -exec rm -f {} +
 	$(Q)find . -name '*.bak' -exec rm -f {} +
-
-lxc.clean:
-	$(Q)rm -rf lxc-env
 
 PHONY += search.checker search.checker.%
 search.checker: install
@@ -62,6 +54,7 @@ test.shell:
 
 # wrap ./manage script
 
+MANAGE += run
 MANAGE += weblate.translations.commit weblate.push.translations
 MANAGE += data.all data.languages data.useragents data.osm_keys_tags
 MANAGE += docs.html docs.live docs.gh-pages docs.prebuild docs.clean

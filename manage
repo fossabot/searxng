@@ -41,8 +41,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/utils/docker.sh"
 
 help() {
     cat <<EOF
-webapp.:
-  run       : run developer instance
+run         : run developer instance
 EOF
     tests.help
     python.help
@@ -59,7 +58,10 @@ environment ...
 EOF
 }
 
-webapp.run() {
+run() {
+    # make sure the virtualenv is setup correctly before opening the browser
+    pyenv.install
+
     local parent_proc="$$"
     (
         if [ "${LIVE_THEME}" ]; then
