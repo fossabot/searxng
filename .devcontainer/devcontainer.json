@@ -27,7 +27,5 @@
     "8000": {"label": "Sphinx documentation"},
     "8888": {"label": "SearXNG"}
   },
-  "postCreateCommand": "make install"
+  "postCreateCommand": "git pull && make install"
 }
-
-
