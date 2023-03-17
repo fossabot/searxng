@@ -64,7 +64,7 @@ setup(
         'pyyaml==6.0',
         'httpx[http2]==0.21.2',
         'Brotli==1.0.9',
-        'uvloop==0.17.0',
+        'uvloop==0.17.0; sys_platform!="win32"',
         'httpx-socks[asyncio]==0.7.2',
         'setproctitle==1.3.2',
         'redis==4.5.1',
