@@ -5,17 +5,15 @@
 import asyncio
 import threading
 import concurrent.futures
-from queue import SimpleQueue
-from types import MethodType
+import ssl
 from timeit import default_timer
-from typing import Iterable, NamedTuple, Tuple, List, Dict, Union
+from typing import NamedTuple, List, Dict, Union
 from contextlib import contextmanager
 
 import httpx
-import anyio
 
-from .network import get_network, initialize, check_network_configuration  # pylint:disable=cyclic-import
-from .client import get_loop
+from .network import get_network, initialize, check_network_configuration, Network  # pylint:disable=cyclic-import
+from .client import get_loop, SoftRetryHTTPException
 from .raise_for_httperror import raise_for_httperror
 
 
@@ -41,7 +39,7 @@ def set_context_network_name(network_name):
     THREADLOCAL.network = get_network(network_name)
 
 
-def get_context_network():
+def get_context_network() -> Network:
     """If set return thread's network.
 
     If unset, return value from :py:obj:`get_network`.
@@ -86,29 +84,46 @@ def _get_timeout(start_time, kwargs):
     return timeout
 
 
+def call_with_http_client_context(self, start_time, func, *args, **kwargs):
+    try:
+        retries = self.retries
+        while retries >= 0 and _get_timeout(start_time, {}) > 0:  # pragma: no cover
+            THREADLOCAL.http_client = get_context_network().get_http_client()
+            try:
+                return func(*args, **kwargs)
+            except (ssl.SSLError, httpx.RequestError, httpx.HTTPStatusError) as e:
+                if retries <= 0:
+                    raise e
+            except SoftRetryHTTPException as e:
+                if retries <= 0:
+                    raise e
+            except Exception as e:
+                raise e
+            retries -= 1
+        raise httpx.TimeoutException("Timeout")
+    finally:
+        THREADLOCAL.http_client = None
+
+
 def request(method, url, **kwargs):
     """same as requests/requests/api.py request(...)"""
+    http_client = THREADLOCAL.__dict__.get('http_client') or get_network().get_http_client()
     with _record_http_time() as start_time:
-        network = get_context_network()
         timeout = _get_timeout(start_time, kwargs)
-        future = asyncio.run_coroutine_threadsafe(network.request(method, url, **kwargs), get_loop())
-        try:
-            return future.result(timeout)
-        except concurrent.futures.TimeoutError as e:
-            raise httpx.TimeoutException('Timeout', request=None) from e
+        kwargs.pop('timeout', None)
+        return http_client.request(method, url, timeout=timeout, **kwargs)
 
 
 def multi_requests(request_list: List["Request"]) -> List[Union[httpx.Response, Exception]]:
     """send multiple HTTP requests in parallel. Wait for all requests to finish."""
     with _record_http_time() as start_time:
         # send the requests
-        network = get_context_network()
         loop = get_loop()
         future_list = []
         for request_desc in request_list:
             timeout = _get_timeout(start_time, request_desc.kwargs)
             future = asyncio.run_coroutine_threadsafe(
-                network.request(request_desc.method, request_desc.url, **request_desc.kwargs), loop
+                THREADLOCAL.http_client.request(request_desc.method, request_desc.url, **request_desc.kwargs), loop
             )
             future_list.append((future, timeout))
 
@@ -189,78 +204,3 @@ def patch(url, data=None, **kwargs):
 
 def delete(url, **kwargs):
     return request('delete', url, **kwargs)
-
-
-async def stream_chunk_to_queue(network, queue, method, url, **kwargs):
-    try:
-        async with await network.stream(method, url, **kwargs) as response:
-            queue.put(response)
-            # aiter_raw: access the raw bytes on the response without applying any HTTP content decoding
-            # https://www.python-httpx.org/quickstart/#streaming-responses
-            async for chunk in response.aiter_raw(65536):
-                if len(chunk) > 0:
-                    queue.put(chunk)
-    except (httpx.StreamClosed, anyio.ClosedResourceError):
-        # the response was queued before the exception.
-        # the exception was raised on aiter_raw.
-        # we do nothing here: in the finally block, None will be queued
-        # so stream(method, url, **kwargs) generator can stop
-        pass
-    except Exception as e:  # pylint: disable=broad-except
-        # broad except to avoid this scenario:
-        # exception in network.stream(method, url, **kwargs)
-        # -> the exception is not catch here
-        # -> queue None (in finally)
-        # -> the function below steam(method, url, **kwargs) has nothing to return
-        queue.put(e)
-    finally:
-        queue.put(None)
-
-
-def _stream_generator(method, url, **kwargs):
-    queue = SimpleQueue()
-    network = get_context_network()
-    future = asyncio.run_coroutine_threadsafe(stream_chunk_to_queue(network, queue, method, url, **kwargs), get_loop())
-
-    # yield chunks
-    obj_or_exception = queue.get()
-    while obj_or_exception is not None:
-        if isinstance(obj_or_exception, Exception):
-            raise obj_or_exception
-        yield obj_or_exception
-        obj_or_exception = queue.get()
-    future.result()
-
-
-def _close_response_method(self):
-    asyncio.run_coroutine_threadsafe(self.aclose(), get_loop())
-    # reach the end of _self.generator ( _stream_generator ) to an avoid memory leak.
-    # it makes sure that :
-    # * the httpx response is closed (see the stream_chunk_to_queue function)
-    # * to call future.result() in _stream_generator
-    for _ in self._generator:  # pylint: disable=protected-access
-        continue
-
-
-def stream(method, url, **kwargs) -> Tuple[httpx.Response, Iterable[bytes]]:
-    """Replace httpx.stream.
-
-    Usage:
-    response, stream = poolrequests.stream(...)
-    for chunk in stream:
-        ...
-
-    httpx.Client.stream requires to write the httpx.HTTPTransport version of the
-    the httpx.AsyncHTTPTransport declared above.
-    """
-    generator = _stream_generator(method, url, **kwargs)
-
-    # yield response
-    response = next(generator)  # pylint: disable=stop-iteration-return
-    if isinstance(response, Exception):
-        raise response
-
-    response._generator = generator  # pylint: disable=protected-access
-    response.close = MethodType(_close_response_method, response)
-
-    return response, generator

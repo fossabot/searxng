@@ -71,8 +71,8 @@ def _download_and_check_if_image(image_url: str) -> bool:
         a = time()
         try:
             # use "image_proxy" (avoid HTTP/2)
-            network.set_context_network_name('image_proxy')
-            r, stream = network.stream(
+            http_client = network.get_network('image_proxy').get_http_client()
+            r = http_client.stream(
                 'GET',
                 image_url,
                 timeout=10.0,
@@ -95,7 +95,6 @@ def _download_and_check_if_image(image_url: str) -> bool:
             else:
                 is_image = False
             del r
-            del stream
             return is_image
         except httpx.TimeoutException:
             logger.error('Timeout for %s: %i', image_url, int(time() - a))

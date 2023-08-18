@@ -162,7 +162,7 @@ class OnlineProcessor(EngineProcessor):
 
         try:
             # send requests and parse the results
-            search_results = self._search_basic(query, params)
+            search_results = searx.network.call_with_http_client_context(start_time, self._search_basic, query, params)
             self.extend_container(result_container, start_time, search_results)
         except ssl.SSLError as e:
             # requests timeout (connect or read)

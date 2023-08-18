@@ -3,17 +3,14 @@
 # pylint: disable=global-statement
 # pylint: disable=missing-module-docstring, missing-class-docstring
 
-import atexit
-import asyncio
 import ipaddress
 from itertools import cycle
-from typing import Dict
+from typing import Dict, Tuple
 
 import httpx
 
 from searx import logger, searx_debug
-from .client import new_client, get_loop, AsyncHTTPTransportNoHttp
-from .raise_for_httperror import raise_for_httperror
+from .client import ABCHTTPClient, HTTPClientSoftError, TorHTTPClient
 
 
 logger = logger.getChild('network')
@@ -89,14 +86,14 @@ class Network:
         self.retries = retries
         self.retry_on_http_error = retry_on_http_error
         self.max_redirects = max_redirects
-        self._local_addresses_cycle = self.get_ipaddress_cycle()
-        self._proxies_cycle = self.get_proxy_cycles()
-        self._clients = {}
+        self._local_addresses_cycle = self._get_ipaddress_cycle()
+        self._proxies_cycle = self._get_proxy_cycles()
+        self._clients: Dict[Tuple, HTTPClientSoftError] = {}
         self._logger = logger.getChild(logger_name) if logger_name else logger
-        self.check_parameters()
+        self._check_parameters()
 
-    def check_parameters(self):
-        for address in self.iter_ipaddresses():
+    def _check_parameters(self):
+        for address in self._iter_ipaddresses():
             if '/' in address:
                 ipaddress.ip_network(address, False)
             else:
@@ -105,7 +102,7 @@ class Network:
         if self.proxies is not None and not isinstance(self.proxies, (str, dict)):
             raise ValueError('proxies type has to be str, dict or None')
 
-    def iter_ipaddresses(self):
+    def _iter_ipaddresses(self):
         local_addresses = self.local_addresses
         if not local_addresses:
             return
@@ -114,10 +111,10 @@ class Network:
         for address in local_addresses:
             yield address
 
-    def get_ipaddress_cycle(self):
+    def _get_ipaddress_cycle(self):
         while True:
             count = 0
-            for address in self.iter_ipaddresses():
+            for address in self._iter_ipaddresses():
                 if '/' in address:
                     for a in ipaddress.ip_network(address, False).hosts():
                         yield str(a)
@@ -129,7 +126,7 @@ class Network:
             if count == 0:
                 yield None
 
-    def iter_proxies(self):
+    def _iter_proxies(self):
         if not self.proxies:
             return
         # https://www.python-httpx.org/compatibility/#proxy-keys
@@ -142,15 +139,15 @@ class Network:
                     proxy_url = [proxy_url]
                 yield pattern, proxy_url
 
-    def get_proxy_cycles(self):
+    def _get_proxy_cycles(self):
         proxy_settings = {}
-        for pattern, proxy_urls in self.iter_proxies():
+        for pattern, proxy_urls in self._iter_proxies():
             proxy_settings[pattern] = cycle(proxy_urls)
         while True:
             # pylint: disable=stop-iteration-return
             yield tuple((pattern, next(proxy_url_cycle)) for pattern, proxy_url_cycle in proxy_settings.items())
 
-    async def log_response(self, response: httpx.Response):
+    async def _log_response(self, response: httpx.Response):
         request = response.request
         status = f"{response.status_code} {response.reason_phrase}"
         response_line = f"{response.http_version} {status}"
@@ -158,144 +155,36 @@ class Network:
         content_type = f' ({content_type})' if content_type else ''
         self._logger.debug(f'HTTP Request: {request.method} {request.url} "{response_line}"{content_type}')
 
-    @staticmethod
-    async def check_tor_proxy(client: httpx.AsyncClient, proxies) -> bool:
-        if proxies in Network._TOR_CHECK_RESULT:
-            return Network._TOR_CHECK_RESULT[proxies]
+    def get_http_client(self) -> ABCHTTPClient:
+        """Return an HTTP client.
+        If two proxies are defined, the first call to this function returns an HTTP client using the first proxy.
+        A second call returns an HTTP client using the second proxy.
 
-        result = True
-        # ignore client._transport because it is not used with all://
-        for transport in client._mounts.values():  # pylint: disable=protected-access
-            if isinstance(transport, AsyncHTTPTransportNoHttp):
-                continue
-            if getattr(transport, "_pool") and getattr(
-                transport._pool, "_rdns", False  # pylint: disable=protected-access
-            ):
-                continue
-            return False
-        response = await client.get("https://check.torproject.org/api/ip", timeout=60)
-        if not response.json()["IsTor"]:
-            result = False
-        Network._TOR_CHECK_RESULT[proxies] = result
-        return result
-
-    async def get_client(self, verify=None, max_redirects=None):
-        verify = self.verify if verify is None else verify
-        max_redirects = self.max_redirects if max_redirects is None else max_redirects
-        local_address = next(self._local_addresses_cycle)
+        Returns:
+            ABCHTTPClient: _description_
+        """
+        local_addresses = next(self._local_addresses_cycle)
         proxies = next(self._proxies_cycle)  # is a tuple so it can be part of the key
-        key = (verify, max_redirects, local_address, proxies)
-        hook_log_response = self.log_response if searx_debug else None
+        key = (local_addresses, proxies)
+        hook_log_response = self._log_response if searx_debug else None
         if key not in self._clients or self._clients[key].is_closed:
-            client = new_client(
-                self.enable_http,
-                verify,
-                self.enable_http2,
-                self.max_connections,
-                self.max_keepalive_connections,
-                self.keepalive_expiry,
-                dict(proxies),
-                local_address,
-                0,
-                max_redirects,
-                hook_log_response,
+            http_client_cls = TorHTTPClient if self.using_tor_proxy else HTTPClientSoftError
+            self._clients[key] = http_client_cls(
+                enable_http=self.enable_http,
+                enable_http2=self.enable_http2,
+                max_connections=self.max_connections,
+                max_keepalive_connections=self.max_keepalive_connections,
+                keepalive_expiry=self.keepalive_expiry,
+                proxies=dict(proxies),
+                local_addresses=local_addresses,
+                hook_log_response=hook_log_response,
+                logger=self._logger,
             )
-            if self.using_tor_proxy and not await self.check_tor_proxy(client, proxies):
-                await client.aclose()
-                raise httpx.ProxyError('Network configuration problem: not using Tor')
-            self._clients[key] = client
         return self._clients[key]
 
-    async def aclose(self):
-        async def close_client(client):
-            try:
-                await client.aclose()
-            except httpx.HTTPError:
-                pass
-
-        await asyncio.gather(*[close_client(client) for client in self._clients.values()], return_exceptions=False)
-
-    @staticmethod
-    def extract_kwargs_clients(kwargs):
-        kwargs_clients = {}
-        if 'verify' in kwargs:
-            kwargs_clients['verify'] = kwargs.pop('verify')
-        if 'max_redirects' in kwargs:
-            kwargs_clients['max_redirects'] = kwargs.pop('max_redirects')
-        if 'allow_redirects' in kwargs:
-            # see https://github.com/encode/httpx/pull/1808
-            kwargs['follow_redirects'] = kwargs.pop('allow_redirects')
-        return kwargs_clients
-
-    @staticmethod
-    def extract_do_raise_for_httperror(kwargs):
-        do_raise_for_httperror = True
-        if 'raise_for_httperror' in kwargs:
-            do_raise_for_httperror = kwargs['raise_for_httperror']
-            del kwargs['raise_for_httperror']
-        return do_raise_for_httperror
-
-    @staticmethod
-    def patch_response(response, do_raise_for_httperror):
-        if isinstance(response, httpx.Response):
-            # requests compatibility (response is not streamed)
-            # see also https://www.python-httpx.org/compatibility/#checking-for-4xx5xx-responses
-            response.ok = not response.is_error
-
-            # raise an exception
-            if do_raise_for_httperror:
-                raise_for_httperror(response)
-
-        return response
-
-    def is_valid_response(self, response):
-        # pylint: disable=too-many-boolean-expressions
-        if (
-            (self.retry_on_http_error is True and 400 <= response.status_code <= 599)
-            or (isinstance(self.retry_on_http_error, list) and response.status_code in self.retry_on_http_error)
-            or (isinstance(self.retry_on_http_error, int) and response.status_code == self.retry_on_http_error)
-        ):
-            return False
-        return True
-
-    async def call_client(self, stream, method, url, **kwargs):
-        retries = self.retries
-        was_disconnected = False
-        do_raise_for_httperror = Network.extract_do_raise_for_httperror(kwargs)
-        kwargs_clients = Network.extract_kwargs_clients(kwargs)
-        while retries >= 0:  # pragma: no cover
-            client = await self.get_client(**kwargs_clients)
-            try:
-                if stream:
-                    response = client.stream(method, url, **kwargs)
-                else:
-                    response = await client.request(method, url, **kwargs)
-                if self.is_valid_response(response) or retries <= 0:
-                    return Network.patch_response(response, do_raise_for_httperror)
-            except httpx.RemoteProtocolError as e:
-                if not was_disconnected:
-                    # the server has closed the connection:
-                    # try again without decreasing the retries variable & with a new HTTP client
-                    was_disconnected = True
-                    await client.aclose()
-                    self._logger.warning('httpx.RemoteProtocolError: the server has disconnected, retrying')
-                    continue
-                if retries <= 0:
-                    raise e
-            except (httpx.RequestError, httpx.HTTPStatusError) as e:
-                if retries <= 0:
-                    raise e
-            retries -= 1
-
-    async def request(self, method, url, **kwargs):
-        return await self.call_client(False, method, url, **kwargs)
-
-    async def stream(self, method, url, **kwargs):
-        return await self.call_client(True, method, url, **kwargs)
-
-    @classmethod
-    async def aclose_all(cls):
-        await asyncio.gather(*[network.aclose() for network in NETWORKS.values()], return_exceptions=False)
+    def close(self):
+        for client in self._clients.values():
+            client.close()
 
 
 def get_network(name=None):
@@ -303,19 +192,14 @@ def get_network(name=None):
 
 
 def check_network_configuration():
-    async def check():
-        exception_count = 0
-        for network in NETWORKS.values():
-            if network.using_tor_proxy:
-                try:
-                    await network.get_client()
-                except Exception:  # pylint: disable=broad-except
-                    network._logger.exception('Error')  # pylint: disable=protected-access
-                    exception_count += 1
-        return exception_count
-
-    future = asyncio.run_coroutine_threadsafe(check(), get_loop())
-    exception_count = future.result()
+    exception_count = 0
+    for network in NETWORKS.values():
+        if network.using_tor_proxy:
+            try:
+                network.get_http_client()
+            except Exception:  # pylint: disable=broad-except
+                network._logger.exception('Error')  # pylint: disable=protected-access
+                exception_count += 1
     if exception_count > 0:
         raise RuntimeError("Invalid network configuration")
 
@@ -366,8 +250,6 @@ def initialize(settings_engines=None, settings_outgoing=None):
             network = getattr(engine, 'network', None)
             yield engine_name, engine, network
 
-    if NETWORKS:
-        done()
     NETWORKS.clear()
     NETWORKS[DEFAULT_NAME] = new_network({}, logger_name='default')
     NETWORKS['ipv4'] = new_network({'local_addresses': '0.0.0.0'}, logger_name='ipv4')
@@ -402,26 +284,6 @@ def initialize(settings_engines=None, settings_outgoing=None):
         image_proxy_params = default_params.copy()
         image_proxy_params['enable_http2'] = False
         NETWORKS['image_proxy'] = new_network(image_proxy_params, logger_name='image_proxy')
-
-
-@atexit.register
-def done():
-    """Close all HTTP client
-
-    Avoid a warning at exit
-    See https://github.com/encode/httpx/pull/2026
-
-    Note: since Network.aclose has to be async, it is not possible to call this method on Network.__del__
-    So Network.aclose is called here using atexit.register
-    """
-    try:
-        loop = get_loop()
-        if loop:
-            future = asyncio.run_coroutine_threadsafe(Network.aclose_all(), loop)
-            # wait 3 seconds to close the HTTP clients
-            future.result(3)
-    finally:
-        NETWORKS.clear()
 
 
 NETWORKS[DEFAULT_NAME] = Network()
