@@ -1,3 +1,5 @@
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdalf%2Fsearxng.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdalf%2Fsearxng?ref=badge_shield)
+
 .. SPDX-License-Identifier: AGPL-3.0-or-later
 
 ----
@@ -171,3 +173,6 @@ Support the SearXNG project by clicking the donation page:
 https://docs.searxng.org/donate.html
 
 Thank you :)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdalf%2Fsearxng.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdalf%2Fsearxng?ref=badge_large)
